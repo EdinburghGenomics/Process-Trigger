@@ -1,0 +1,35 @@
+#
+# README for proctrigger.sh, ttagent.sh
+#
+# Status: Beta - development/testing. Fully functional and tested.
+#
+# Description: Run proctrigger.sh to pickup new inbound datasets and
+# trigger processing. proctrigger.sh will spawn a ttagent.sh process
+# for each new dataset it encounters. ttagent.sh will be responsible
+# for synchronising the dataset, and upon encountering the "trigger
+# file", launches the processing workflow script (a dummy is provided).
+#
+# Run "proctrigger.sh" without arguments in production, to stage datasets and trigger processing.
+# Run "proctrigger.sh rescan" in production, to rescan the data root for older but unprocessed datasets.
+#
+# Arguments to proctrigger.sh accepts usually one or two arguments, as follows:
+#    createnewtest - to create some new test data (testing only)
+#    filltest <testdir> - to add further input files to a currently active test directory.
+#    completetest <testdir> - to write the trigger file and complete the test directory.
+#    report - reports on current status of datasets, but does not trigger anything. Informs of any missed/aged directories.
+#    rescan - scan the entire top level of DATAROOT for directories - useful if cron halted or RDF is offline for a period.
+#
+# Make good use of the "report" argument to see current status.
+#
+# ttagent.sh can be run by itself, and takes three arguments.
+# usage: ttagent.sh <source dir> <dest root dir> <trigger file> 
+#
+# ttagent.sh (transfer and trigger agent) continuously monitors a partial
+# dataset directory and stages that to the compute platform by looping
+# rsync with a small delay. It will stop looping when the "trigger file" is
+# received, indicating the completion of the dataset directory.
+# 
+# ttagent.sh launches a configurable workflow.sh script, passing the
+# dataset's staged location as a single argument.
+#
+
