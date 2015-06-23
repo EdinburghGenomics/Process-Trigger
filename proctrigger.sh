@@ -1,44 +1,27 @@
 #!/bin/bash
-# Status: Beta - development/testing. Works and tested. Deploying.
+# Status: Beta - development/testing. Handed over to Edinburgh Genomics.
 #
 # Description: Run proctrigger.sh to pickup new inbound datasets and trigger processing.
+# Usage: proctrigger.sh [ createnewtest | filltest| completetest | report | rescan ]
+# Run without arguments to stage data and trigger processing.
 #
-# Run "proctrigger.sh" without arguments in production, to stage data and trigger processing.
-#
-# Arguments to proctrigger.sh accepts usually one or two arguments, as follows:
-#    createnewtest - to create some new test data (testing only)
-#    filltest <testdir> - to add further input files to a currently active test directory.
-#    completetest <testdir> - to write the trigger file and complete the test directory.
-#    report - reports on current status of datasets, but does not trigger anything. Informs of any missed/aged directories.
+# Optional arguments:
+#    createnewtest - create some new test data (testing only)
+#    filltest <testdir> - add further input files to a currently active test directory.
+#    completetest <testdir> - write the trigger file and complete the test directory.
+#    report - report on current status of datasets, but does not trigger anything. Informs of any missed/aged directories.
 #    rescan - scan the entire top level of DATAROOT for directories - useful if cron halted or RDF is offline for a period.
 #
 # Note: a key assumption made is that no data directory name will be an exact substring of any other.
+#
 
-
-# Setup
-DATAROOT=/sequencer/RAW  # /path/to/rdf/mount 
-PROCROOT=/scratch/U008/edingen/INPUT_DATA                           # /scratch/U008/kdmellow/procroot
-EXECROOT=/home/U008/edingen/bin  # /path/to/executables
-DATESTAMP=$(date --rfc-3339='seconds'|sed 's/ /_/g;s/+.*//;s/:/-/g')
-#DATAREGEXP='^.*/*_data_[0-9]{5}$'
-DATAREGEXP='^.*/[0-9]{6}_E[0-9]{5}_.*_.*$'
-PTLOCKFILE=$DATAROOT/.proctrigger.lock
-TTAGENTEXE=$EXECROOT/ttagent
-TRIGGER=RTAComplete.txt
-AGEINMINS=5
-
-
-#                            #
-# No need to edit below here #
-#                            #
+source config.sh
 
 # Some temporaries
 ALLTTACTIVE=$DATAROOT/.transfer_active.list #.$DATESTAMP
 ALLTTCOMPLETE=$DATAROOT/.transfer_complete.list #.$DATESTAMP
 
-
-### Test options begin here ###
-
+### Test options ###
 # Test - create test data
 if [ x$1 == "xcreatenewtest" ] 
 then
@@ -93,13 +76,12 @@ then
     for i in $ALLDATASETS ; do echo $(basename $i) |grep -f $ALLTTCOMPLETE ; done
     exit
 fi
-### Test options end here ###
+### End test options ###
 
 
-### ProcTrigger starts here ###
+### ProcTrigger ###
 
-
-# The meat - scan datasets, and start staging data processes. Check for lock if running this stage.
+# Scan datasets and start staging data processes. Check for lock if running this stage.
 if [ -e $PTLOCKFILE ]
 then
     echo Lock file present - is another $(basename $0) running? If not, remove the lock file and try again...
@@ -135,3 +117,4 @@ done
 
 # Clear the lock file when finished    
 rm -f $PTLOCKFILE
+

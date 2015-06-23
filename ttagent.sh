@@ -8,16 +8,7 @@
 # usage: ttagent.sh <source dir> <dest root dir> <trigger file> 
 #
 
-
-# Setup parameters
-WFEXEC=/home/U008/edingen/bin/ptworkflow
-TTDELAY=120
-
-
-#                            #
-# No need to edit below here #
-#                            #
-
+source config.sh
 
 # Lock file configuration. Lock files are kept in the source root directory
 TTLOCKFILE=$(dirname $(echo $1|sed 's/\/$//'))/.$(basename $(echo $1|sed 's/\/$//')).ttactive
@@ -34,22 +25,23 @@ else
     # First set a transfer lock to prevent simultaneous execution of ttagent.
     if [ -e $TTLOCKFILE ]
     then
-	echo Lock file present - is another $(basename $0) running? If not, remove the lock file and try again.
-	exit
+        echo Lock file present - is another $(basename $0) running? If not, remove the lock file and try again.
+        exit
     else 
-	echo Setting lock file: $TTLOCKFILE
-	touch $TTLOCKFILE
+        echo Setting lock file: $TTLOCKFILE
+        touch $TTLOCKFILE
     fi
 
 
     # Announce trigger
-    echo ttagent: trigger $WFEXEC on receipt of $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3)
+    echo ttagent: trigger $WORKFLOWEXE on receipt of $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3)
     
     # Loop until transfer is complete (trigger file is received safely)
-    until [ -e $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3) ] ; do
-	echo sleeping $TTDELAY\s at $(date)
-	sleep $TTDELAY
-	rsync -avu --size-only --partial --progress $(echo $1|sed 's/\/$//')/ $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
+    until [ -e $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3) ]
+    do
+	    echo sleeping $TTDELAY\s at $(date)
+	    sleep $TTDELAY
+	    rsync -avu --size-only --partial --progress $(echo $1|sed 's/\/$//')/ $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
     done
 
 
@@ -62,7 +54,7 @@ else
     rm -f $TTLOCKFILE
 
     # Call the Workflow execution script
-    $WFEXEC $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
+    $WORKFLOWEXE $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
 fi
 
 
