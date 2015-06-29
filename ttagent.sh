@@ -15,6 +15,7 @@ TTLOCKFILE=$(dirname $(echo $1|sed 's/\/$//'))/.$(basename $(echo $1|sed 's/\/$/
 WFLOCKFILE=$(dirname $(echo $1|sed 's/\/$//'))/.$(basename $(echo $1|sed 's/\/$//')).ttcomplete
 
 # Check the main processing workflow lock on this to prevent future execution upon rescan.
+echo "[ttagent] Checking for workflow-complete lock files"
 if [ -e $WFLOCKFILE ]
 then
     echo Workflow lock file present: $WFLOCKFILE
@@ -22,6 +23,7 @@ then
     exit
 else 
 
+    echo "[ttagent] Checking for workflow-active lock files"
     # First set a transfer lock to prevent simultaneous execution of ttagent.
     if [ -e $TTLOCKFILE ]
     then
@@ -34,21 +36,21 @@ else
 
 
     # Announce trigger
-    echo ttagent: trigger $WORKFLOWEXE on receipt of $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3)
+    echo "[ttagent] trigger $WORKFLOWEXE on receipt of $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3)"
     
     # Loop until transfer is complete (trigger file is received safely)
     until [ -e $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3) ]
     do
-	    echo sleeping $TTDELAY\s at $(date)
+	    echo "[ttagent] Sleeping $TTDELAY\s ($(date))"
 	    sleep $TTDELAY
 	    rsync -avu --size-only --partial --progress $(echo $1|sed 's/\/$//')/ $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
     done
-
 
     # Final rsync just in case trigger file partially copied. 
     rsync -avu --size-only --partial --progress $(echo $1|sed 's/\/$//')/ $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
 
     # Trigger the main processing workflow and exit. Set a lock on this to prevent future execution upon rescan/transfer.
+    echo "[ttagent] Processing workflow started at $(date --rfc-3339='seconds')"
     echo Processing workflow started at $(date --rfc-3339='seconds') > $WFLOCKFILE
     # Can remove transfer and trigger lockfile if we get here
     rm -f $TTLOCKFILE
@@ -57,4 +59,5 @@ else
     $WORKFLOWEXE $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
 fi
 
+echo "[ttagent] Done"
 

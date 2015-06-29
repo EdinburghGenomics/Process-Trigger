@@ -2,7 +2,7 @@
 # Status: Beta - development/testing. Handed over to Edinburgh Genomics.
 #
 # Description: Run proctrigger.sh to pickup new inbound datasets and trigger processing.
-# Usage: proctrigger.sh [ createnewtest | filltest| completetest | report | rescan ]
+# Usage: proctrigger.sh [ createnewtest | filltest | completetest | report | rescan ]
 # Run without arguments to stage data and trigger processing.
 #
 # Optional arguments:
@@ -25,11 +25,11 @@ ALLTTCOMPLETE=$DATAROOT/.transfer_complete.list #.$DATESTAMP
 # Test - create test data
 if [ x$1 == "xcreatenewtest" ] 
 then
-    # Create a new dataset.
+    echo "[proctrigger] Creating new test dataset"
     TESTDIR=$DATESTAMP\_data_$(printf %.5d $RANDOM)
-    echo mkdir $DATAROOT/$TESTDIR:
-    mkdir $DATAROOT/$TESTDIR
+    mkdir -v $DATAROOT/$TESTDIR
     # Give it something to start off with...
+    echo "[proctrigger] Running filltest"
     $EXECROOT/$(basename $0) filltest $DATAROOT/$TESTDIR
     exit
 fi
@@ -37,16 +37,18 @@ fi
 # Test - fill existing dataset
 if [ x$1 == "xfilltest" ] 
 then
-    # stick some random stuff in a dataset.
+    echo "[proctrigger] Randomly populating dataset"
     TESTDIR=$2
-    for i in $(seq 20) ; do dd if=/dev/urandom of=$TESTDIR/$RANDOM bs=1k count=128 ; done 
+    for i in $(seq 20); do dd if=/dev/urandom of=$TESTDIR/$RANDOM bs=1k count=128; done
+    echo "$TESTDIR now contains randomly generated files:"
+    ls
     exit
 fi
 
 # Test - complete existing dataset
 if [ x$1 == "xcompletetest" ] 
 then
-    # complete a test by inserting the trigger file
+    echo "[proctrigger] Inserting RTAComplete.txt file to complete the test dataset"
     TESTDIR=$(echo $2|sed 's/\/$//')
     touch $TESTDIR/$TRIGGER
     exit
@@ -84,7 +86,7 @@ fi
 # Scan datasets and start staging data processes. Check for lock if running this stage.
 if [ -e $PTLOCKFILE ]
 then
-    echo Lock file present - is another $(basename $0) running? If not, remove the lock file and try again...
+    echo "Lock file present - is another $(basename $0) running? If not, remove the lock file and try again."
     exit
 else 
     touch $PTLOCKFILE
@@ -93,23 +95,28 @@ fi
 # Scan for new datasets (usually the most recent entries, but can rescan all)
 if [ x$1 == "xrescan" ] # rescan will look at all datasets resident - not just the most recent ones.
 then
-#    find $DATAROOT -mindepth 1 -maxdepth 1 -type d | grep -E "$DATAREGEXP"
+    echo "[proctrigger] Searching for all datasets"
+    # find $DATAROOT -mindepth 1 -maxdepth 1 -type d | grep -E "$DATAREGEXP"
     ALLDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d | grep -E "$DATAREGEXP")
 else
-#    find $DATAROOT -mindepth 1 -maxdepth 1 -type d -cmin -5|grep -E "$DATAREGEXP"
+    echo "[proctrigger] Searching for new datasets within the last 5 minutes"
+    # find $DATAROOT -mindepth 1 -maxdepth 1 -type d -cmin -5|grep -E "$DATAREGEXP"
     ALLDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d -cmin -$AGEINMINS|grep -E "$DATAREGEXP")
 fi
 
+
+echo "[proctrigger] Searching for active/completed runs"
 find $DATAROOT -mindepth 1 -maxdepth 1 -type f -name *.ttactive|sed 's/.*\/\./\^/;s/.ttactive/\$/' > $ALLTTACTIVE
 find $DATAROOT -mindepth 1 -maxdepth 1 -type f -name *.ttcomplete|sed 's/.*\/\./\^/;s/.ttcomplete/\$/' > $ALLTTCOMPLETE
 
 
 # Process each new dataset
-NEWDATASETS=$(for i in $ALLDATASETS ; do echo $(basename $i) |grep -v -f $ALLTTACTIVE |grep -v -f $ALLTTCOMPLETE ; done)
+echo "[proctrigger] Processing new datasets:"
+NEWDATASETS=$(for i in $ALLDATASETS; do echo $(basename $i) |grep -v -f $ALLTTACTIVE | grep -v -f $ALLTTCOMPLETE; done)
 for dataset in $NEWDATASETS
 do
     echo $DATESTAMP: Triggering for dataset: $dataset > $PROCROOT/.ttagent.$(basename $dataset).log
-    echo $DATESTAMP: Triggering for dataset: $dataset
+    echo "[proctrigger] Triggering ttagent for dataset: $dataset"
     # Trigger a ttagent for this dataset
     nohup $TTAGENTEXE $DATAROOT/$dataset $PROCROOT $TRIGGER > $PROCROOT/.ttagent.$(basename $dataset).log 2>&1 &
 done
@@ -117,4 +124,6 @@ done
 
 # Clear the lock file when finished    
 rm -f $PTLOCKFILE
+echo "[proctrigger] Done"
+
 
