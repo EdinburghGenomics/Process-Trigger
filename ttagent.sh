@@ -10,9 +10,21 @@
 
 source config.sh
 
+dataset=$1
+procroot=$2
+trigger=$3
+
+function rstrip {
+  echo `sed 's/\/$//' $1`
+}
+
+function do_rsync {
+  rsync -avu --size-only --partial $(echo $1|rstrip)/ $(echo $2|rstrip)/$(basename $(echo $1|rstrip))
+}
+
 # Lock file configuration. Lock files are kept in the source root directory
-TTLOCKFILE=$(dirname $(echo $1|sed 's/\/$//'))/.$(basename $(echo $1|sed 's/\/$//')).ttactive
-WFLOCKFILE=$(dirname $(echo $1|sed 's/\/$//'))/.$(basename $(echo $1|sed 's/\/$//')).ttcomplete
+TTLOCKFILE=$(dirname $(echo $dataset|rstrip))/.$(basename $(echo $dataset|rstrip)).ttactive
+WFLOCKFILE=$(dirname $(echo $dataset|rstrip))/.$(basename $(echo $dataset|rstrip)).ttcomplete
 
 # Check the main processing workflow lock on this to prevent future execution upon rescan.
 echo "[ttagent] Checking for workflow-complete lock files"
@@ -36,18 +48,18 @@ else
 
 
     # Announce trigger
-    echo "[ttagent] trigger $WORKFLOWEXE on receipt of $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3)"
+    echo "[ttagent] trigger $WORKFLOWEXE on receipt of $(echo $procroot|rstrip)/$(basename $(echo $dataset|rstrip))/$(basename $trigger)"
     
     # Loop until transfer is complete (trigger file is received safely)
-    until [ -e $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))/$(basename $3) ]
+    until [ -e $(echo $procroot|rstrip)/$(basename $(echo $dataset|rstrip))/$(basename $trigger) ]
     do
 	    echo "[ttagent] Sleeping $TTDELAY\s ($(date))"
 	    sleep $TTDELAY
-	    rsync -avu --size-only --partial --progress $(echo $1|sed 's/\/$//')/ $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
+	    do_rsync $dataset $procroot
     done
 
     # Final rsync just in case trigger file partially copied. 
-    rsync -avu --size-only --partial --progress $(echo $1|sed 's/\/$//')/ $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
+    do_rsync $dataset $procroot
 
     # Trigger the main processing workflow and exit. Set a lock on this to prevent future execution upon rescan/transfer.
     echo "[ttagent] Processing workflow started at $(date --rfc-3339='seconds')"
@@ -56,7 +68,7 @@ else
     rm -f $TTLOCKFILE
 
     # Call the Workflow execution script
-    $WORKFLOWEXE $(echo $2|sed 's/\/$//')/$(basename $(echo $1|sed 's/\/$//'))
+    $WORKFLOWEXE $(echo $procroot|rstrip)/$(basename $(echo $dataset|rstrip))
 fi
 
 echo "[ttagent] Done"

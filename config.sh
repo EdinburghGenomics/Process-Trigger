@@ -15,6 +15,8 @@ DATAREGEXP='^.*/[0-9]{6}_E[0-9]{5}_.*_.*$'
 TRIGGER=RTAComplete.txt
 AGEINMINS=5
 
-PYTHON=$HOME/python/envs/23_06_15/bin/python
+# PYTHON=$HOME/python/envs/23_06_15/bin/python
+PYTHON=`which python`
+
 ANALYSISDRIVER=$HOME/Analysis-Driver
 
