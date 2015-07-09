@@ -51,9 +51,9 @@ TTDELAY=$(configure proctrigger tt_agent_delay)
 
 # Paths to working directories, trigger file name and another time variable
 # Path to rdf mount, e.g. /sequencer/RAW
-DATAROOT=$(configure shared work_home)/$(configure shared raw_dir) 
+DATAROOT=$(configure shared raw_dir) 
 # The path to the working input data, e.g. /scratch/U008/edingen/INPUT_DATA or /scratch/U008/kdmellow/procroot
-PROCROOT=$(configure shared work_home)/$(configure shared input_data_dir)
+PROCROOT=$(configure shared input_data_dir)
 
 TRIGGER=RTAComplete.txt
 AGEINMINS=$(configure proctrigger age_cutoff)
