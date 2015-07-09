@@ -17,6 +17,12 @@
 
 source config.sh
 
+PTLOCKFILE=$DATAROOT/.proctrigger.lock
+DATESTAMP=$(date --rfc-3339='seconds' | sed 's/ /_/g;s/+.*//;s/:/-/g')
+# DATAREGEXP='^.*/*_data_[0-9]{5}$'
+DATAREGEXP='^.*/[0-9]{6}_E[0-9]{5}_.*_.*$'
+
+
 # Some temporaries
 ALLTTACTIVE=$DATAROOT/.transfer_active.list #.$DATESTAMP
 ALLTTCOMPLETE=$DATAROOT/.transfer_complete.list #.$DATESTAMP
@@ -49,33 +55,33 @@ fi
 if [ x$1 == "xcompletetest" ] 
 then
     echo "[proctrigger] Inserting RTAComplete.txt file to complete the test dataset"
-    TESTDIR=$(echo $2|sed 's/\/$//')
+    TESTDIR=$(echo $2 | sed 's/\/$//')
     touch $TESTDIR/$TRIGGER
     exit
 fi
 
 if [ x$1 == "xreport" ] 
 then
-    echo ========= PROCTRIGGER REPORT =========
+    echo "========= PROCTRIGGER REPORT ========="
     # List all Datasets and Statuses:
     #     NEW,       New/pending (monitoring, waiting on trigger).
     #     ACTIVE,    Active/Transferring (ttagent has been launched).
     #     COMPLETE,  Transfer complete (ttagent has finished and triggered the Workflow processing script).
     ALLDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d | grep -E "$DATAREGEXP")
-    OLDDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d -cmin +5|grep -E "$DATAREGEXP")
-    find $DATAROOT -mindepth 1 -maxdepth 1 -type f -name *.ttactive|sed 's/.*\/\./\^/;s/.ttactive/\$/' > $ALLTTACTIVE
-    find $DATAROOT -mindepth 1 -maxdepth 1 -type f -name *.ttcomplete|sed 's/.*\/\./\^/;s/.ttcomplete/\$/' > $ALLTTCOMPLETE
+    OLDDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d -cmin +5 | grep -E "$DATAREGEXP")
+    find $DATAROOT -mindepth 1 -maxdepth 1 -type f -name *.ttactive | sed 's/.*\/\./\^/;s/.ttactive/\$/' > $ALLTTACTIVE
+    find $DATAROOT -mindepth 1 -maxdepth 1 -type f -name *.ttcomplete | sed 's/.*\/\./\^/;s/.ttcomplete/\$/' > $ALLTTCOMPLETE
 
 #    echo === All Datasets ===
 #    for i in $ALLDATASETS ; do echo $(basename $i) ; done
-    echo === New Datasets ===
-    for i in $ALLDATASETS ; do echo $(basename $i) |grep -v -f $ALLTTACTIVE |grep -v -f $ALLTTCOMPLETE ; done
-    echo === Missed Datasets \(rescan to catch\) ===
-    for i in $OLDDATASETS ; do echo $(basename $i) |grep -v -f $ALLTTACTIVE |grep -v -f $ALLTTCOMPLETE ; done
-    echo === Active Datasets ===
-    for i in $ALLDATASETS ; do echo $(basename $i) |grep -f $ALLTTACTIVE ; done
-    echo === Complete Datasets ===
-    for i in $ALLDATASETS ; do echo $(basename $i) |grep -f $ALLTTCOMPLETE ; done
+    echo "=== New Datasets ==="  # All, not active, not complete
+    for i in $ALLDATASETS; do echo $(basename $i) | grep -v -f $ALLTTACTIVE | grep -v -f $ALLTTCOMPLETE; done
+    echo "=== Missed Datasets \(rescan to catch\) ==="  # Old, not active, not complete
+    for i in $OLDDATASETS; do echo $(basename $i) | grep -v -f $ALLTTACTIVE | grep -v -f $ALLTTCOMPLETE; done
+    echo "=== Active Datasets ==="  # All, active
+    for i in $ALLDATASETS; do echo $(basename $i) | grep -f $ALLTTACTIVE; done
+    echo "=== Complete Datasets ==="  # All, complete
+    for i in $ALLDATASETS; do echo $(basename $i) | grep -f $ALLTTCOMPLETE; done
     exit
 fi
 ### End test options ###
@@ -97,7 +103,7 @@ if [ x$1 == "xrescan" ] # rescan will look at all datasets resident - not just t
 then
     echo "[proctrigger] Searching for all datasets"
     # find $DATAROOT -mindepth 1 -maxdepth 1 -type d | grep -E "$DATAREGEXP"
-    ALLDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d | grep -E "$DATAREGEXP")
+    ALLDATASETS=$(find $DATAROOT -mindepth 1 -maxdepth 1 -type d |grep -E "$DATAREGEXP")
 else
     echo "[proctrigger] Searching for new datasets within the last 5 minutes"
     # find $DATAROOT -mindepth 1 -maxdepth 1 -type d -cmin -5|grep -E "$DATAREGEXP"
