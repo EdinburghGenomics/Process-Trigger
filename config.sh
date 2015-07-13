@@ -60,7 +60,7 @@ AGEINMINS=$(configure proctrigger age_cutoff)
 
 # Paths to the AnalysisDriver and the relevant Python interpreter
 PYTHON=$(configure shared python)
-ANALYSISDRIVER=$HOME/Analysis-Driver
+ANALYSISDRIVER=$(configure analysisdriver location)
 
 # print EXECROOT: $EXECROOT
 # print WORKFLOWEXE: $WORKFLOWEXE
