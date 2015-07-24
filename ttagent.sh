@@ -53,7 +53,7 @@ else
 
 
     # Announce trigger
-    print "Triggering $WORKFLOWEXE on receipt of $(echo $procroot|rstrip)/$(basename $(echo $dataset|rstrip))/$(basename $trigger)"
+    print "Will trigger $WORKFLOWEXE on receipt of $(echo $procroot|rstrip)/$(basename $(echo $dataset|rstrip))/$(basename $trigger)"
     
     # Loop until transfer is complete (trigger file is received safely)
     until [ -e $(echo $procroot|rstrip)/$(basename $(echo $dataset|rstrip))/$(basename $trigger) ]

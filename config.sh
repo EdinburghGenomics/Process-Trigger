@@ -6,19 +6,14 @@
 # config supplies parameters that are user-configurable (file paths, time delays, etc.). This script reads
 # those parameters and sets them to variables, along with more fundamental parameters (script names, lock
 # file names, etc.) that are explicitly defined below. The user should be able to fully configure the
-# ProcTrigger (and indeed the Analysis Driver) entirely through the yaml config in $HOME/.analysisdriver.yaml
+# ProcTrigger and Analysis Driver entirely through the yaml config in $HOME/.analysisdriver.yaml
 
 
 ### Setup. Point to config files, what environment is to be run, import yaml parsing functions
 
-function print {
-    echo "[config] $@"
-}
-
 scriptpath=$(dirname $(readlink -f $0))
 source $scriptpath/yaml_parser.sh
 
-print "Directory: $scriptpath"
 user_config_file=$HOME/.analysisdriver.yaml
 local_config_file=$scriptpath/example_analysisdriver.yaml
 
@@ -33,8 +28,6 @@ if [ -z $ANALYSISDRIVERENV ]
     then env="testing"
     else env=$ANALYSISDRIVERENV
 fi
-
-print "Using \"$env\" environment in $config_file"
 
 function configure {
     echo $(retrieve_element $config_file $env $1 $2)

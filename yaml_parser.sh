@@ -42,7 +42,7 @@ function retrieve_element {
     local element=$4
     # example: $regexp='production_+proctrigger_+age_cutoff'
     local regexp=$environment'_+'$domain'_+'$element
-    # get parsed yaml            # isolate element    # remove lhs tag        # remove quotes   # remove comments
+         # get parsed yaml        # split by \n       # isolate element # remove lhs tag        # remove quotes   # remove comments
     echo $(parse_yaml $input_yaml | sed -r 's/ /\n/g' | grep -E $regexp | sed -nr s/$regexp=//p | sed -r 's/"//g' | sed -r 's/ *#.*$//g')
 }
 
